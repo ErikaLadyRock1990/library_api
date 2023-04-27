@@ -25,4 +25,5 @@ urlpatterns = [
     path('books/save/', save_book),
     path('books/get-books-by-name/', get_books_by_name),
     path('books/update/', update), 
+    path('books/delete/', delete)
 ]

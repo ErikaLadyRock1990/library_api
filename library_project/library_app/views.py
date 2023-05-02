@@ -2,32 +2,16 @@ import json
 from django.http import JsonResponse
 from .models import Book
 from django.views.decorators.csrf import csrf_exempt
+from .book_service import *
 
 
 @csrf_exempt
 def save_book(request):
     if request.method == 'POST':
-        data = json.loads(request.body.decode('utf-8'))
-        title = data['title']
-        author = data['author']
-        genre = data['genre']
-        year = data['year']
-        finish_date = data['finish_date']
+        data = json.loads(request.body)
+        book_data = save(data)
+        return JsonResponse(book_data)
 
-    book = Book(title=title, author=author, genre=genre,
-                year=year, finish_date=finish_date)
-    book.save()
-
-    book_data = {
-        'id': book.id,
-        'title': book.title,
-        'author': book.author,
-        'genre': book.genre,
-        'year': book.year,
-        'finish_date': book.finish_date,
-    }
-
-    return JsonResponse(book_data)
 
 
 def get_books_by_name(request):
@@ -52,50 +36,35 @@ def get_books_by_name(request):
 @csrf_exempt
 def update(request):
     if request.method == 'POST':
-        data = json.loads(request.body.decode('utf-8'))
+        data = json.loads(request.body)
+        update_fields = {}
         id = data['id']
-        book = Book.objects.get(id=id)
 
-        if book:
-            if data['title']:
-                title = data['title']
-            elif data['author']:
-                author = data['author']
-            elif data['genre']:
-                genre = data['genre']
-            elif data['year']:
-                year = data['year']
-            elif data['finish_date']:
-                finish_date = ['finish_date']
-            else:
-                return JsonResponse({'Mensaje': "No se han introducido datos"})
+        for clave, valor in data.items():
+            update_fields[clave] = valor
+            book = Book.objects.get(id=id)
 
-        book = Book(id=id, title=title, author=author, genre=genre,
-                    year=year, finish_date=finish_date)
-        book.save()
-        
+            for clave, valor in update_fields.items():
+                setattr(book, clave, valor)
+
+            book.save()
+
         book_data = {
-        'id': book.id,
-        'title': book.title,
-        'author': book.author,
-        'genre': book.genre,
-        'year': book.year,
-        'finish_date': book.finish_date,
+            'id': book.id,
+            'title': book.title,
+            'author': book.author,
+            'genre': book.genre,
+            'year': book.year,
+            'finish_date': book.finish_date,
         }
 
         return JsonResponse(book_data)
-        else:
-            return JsonResponse({f'Mensaje': "El libro con id {id} no existe"})
-
-    
 
 
 @csrf_exempt
-def delete(request):
+def delete_book(request):
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
         id = data['id']
-        book = Book.objects.get(id=id)
-
-        book.delete()
+        book = delete(id)
     return JsonResponse({'mensaje': f'El libro {book.title} ha sido borrado'})
